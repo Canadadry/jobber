@@ -5,10 +5,10 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"jobber/command"
-	"jobber/logger"
-	"jobber/path"
-	"jobber/timer"
+	"github.com/canadadry/jobber/command"
+	"github.com/canadadry/jobber/logger"
+	"github.com/canadadry/jobber/path"
+	"github.com/canadadry/jobber/timer"
 	"log"
 )
 

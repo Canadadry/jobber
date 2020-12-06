@@ -2,8 +2,8 @@ package logger
 
 import (
 	"fmt"
+	"github.com/canadadry/jobber/path"
 	"io"
-	"jobber/path"
 	"log"
 	"os"
 )
