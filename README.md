@@ -12,7 +12,7 @@ Jobber is basicly used with cron, which allow you receive an email when your com
 ## Install 
 
 ```bash
-go get https://github.com/everycheck/jobber
+go get https://github.com/canadadry/jobber
 ```
 
 ## Usage
