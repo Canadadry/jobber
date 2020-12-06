@@ -40,7 +40,7 @@ func run() error {
 	var duration time.Duration
 
 	logger.CaptureInLog(&stdout, l.Out, func(w io.Writer) {
-		runner := command.Runner(w)
+		runner := command.Runner(w, "")
 		duration = timer.TimeTask(func() {
 			cmdSuccessfull, err = runner(path.Job)
 		})
@@ -65,7 +65,7 @@ func run() error {
 	if len(sinkerEnv) > 0 {
 		l.Sinker.Printf("starting %s", sinkerEnv)
 		logger.CaptureInLog(&stdout, l.Sinker, func(w io.Writer) {
-			runner := command.Runner(w)
+			runner := command.Runner(w, path.JobId)
 			_, err = runner(sinkerPath)
 		})
 		if err != nil {
