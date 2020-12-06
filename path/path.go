@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	jobFolder = "%s/.jobber/job/%s.sh"
-	logFolder = "%s/.jobber/log/%s.log"
+	jobFolder    = "%s/.jobber/job/%s.sh"
+	sinkerFolder = "%s/.jobber/sinker/%s.sh"
+	logFolder    = "%s/.jobber/log/%s.log"
 )
 
 const (
@@ -18,20 +19,30 @@ const (
 type Path struct {
 	JobId   string
 	Job     string
+	Failure string
+	Success string
 	JobLog  string
 	MainLog string
 }
 
-func Resolve(command string) (Path, error) {
+type Env struct {
+	Command string
+	Success string
+	Failure string
+}
+
+func Resolve(e Env) (Path, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return Path{}, err
 	}
 
 	return Path{
-		JobId:   fmt.Sprintf("%s-%d", command, time.Now().Unix()),
-		Job:     fmt.Sprintf(jobFolder, home, command),
-		JobLog:  fmt.Sprintf(logFolder, home, command),
+		JobId:   fmt.Sprintf("%s-%d", e.Command, time.Now().Unix()),
+		Job:     fmt.Sprintf(jobFolder, home, e.Command),
+		Failure: fmt.Sprintf(sinkerFolder, home, e.Failure),
+		Success: fmt.Sprintf(sinkerFolder, home, e.Success),
+		JobLog:  fmt.Sprintf(logFolder, home, e.Command),
 		MainLog: fmt.Sprintf(logFolder, home, mainLogName),
 	}, nil
 }

@@ -14,6 +14,7 @@ type Loggers struct {
 	Main       *log.Logger
 	Out        *log.Logger
 	Err        *log.Logger
+	Sinker     *log.Logger
 }
 
 func New(p path.Path) (Loggers, error) {
@@ -31,8 +32,9 @@ func New(p path.Path) (Loggers, error) {
 		mainLog:    mainFile,
 		jobLogFile: jobFile,
 		Main:       log.New(mainFile, p.JobId+" ", log.LstdFlags|log.Lmsgprefix),
-		Out:        log.New(jobFile, "out ", log.LstdFlags|log.Lmsgprefix),
-		Err:        log.New(jobFile, "err ", log.LstdFlags|log.Lmsgprefix),
+		Out:        log.New(jobFile, p.JobId+"-out ", log.LstdFlags|log.Lmsgprefix),
+		Err:        log.New(jobFile, p.JobId+"-err ", log.LstdFlags|log.Lmsgprefix),
+		Sinker:     log.New(jobFile, p.JobId+"-sinker ", log.LstdFlags|log.Lmsgprefix),
 	}, nil
 }
 

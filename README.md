@@ -21,13 +21,13 @@ To start a job:
 
 ```bash
 # with no command on failure or on succes
-jobber jobName1
+jobber -jobname jobName1
 # with no command on failure and one on succes
-jobber jobName2 -succes SinkerName1
+jobber -jobname jobName2 -succes SinkerName1
 # with no command on succes and one on failure
-jobber jobName3 -failure SinkerName2
+jobber -jobname jobName3 -failure SinkerName2
 # with one command on succes and one on failure
-jobber jobName4 -succes SinkerName3 -failure SinkerName4
+jobber -jobname jobName4 -succes SinkerName3 -failure SinkerName4
 ```
 
 ### Configuration

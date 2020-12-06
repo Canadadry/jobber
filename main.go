@@ -3,14 +3,13 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"flag"
 	"fmt"
 	"jobber/command"
 	"jobber/logger"
 	"jobber/path"
 	"jobber/timer"
 	"log"
-	"os"
-	"os/exec"
 )
 
 func ScanAndLog(b *bytes.Buffer, l *log.Logger) {
@@ -24,11 +23,18 @@ func ScanAndLog(b *bytes.Buffer, l *log.Logger) {
 }
 
 func run() error {
-	if len(os.Args) <= 1 {
-		return fmt.Errorf("usage : jobber jobname")
+
+	var env path.Env
+	flag.StringVar(&env.Failure, "f", "", "define the sinker to run on failure")
+	flag.StringVar(&env.Success, "s", "", "define the sinker to run on successs")
+	flag.StringVar(&env.Command, "j", "", "define the job to run")
+	flag.Parse()
+
+	if len(env.Command) == 0 {
+		return fmt.Errorf("argument j cannot be empty")
 	}
-	commandName := os.Args[1]
-	path, err := path.Resolve(commandName)
+
+	path, err := path.Resolve(env)
 	if err != nil {
 		return fmt.Errorf("cannot find home dir : %w", err)
 	}
@@ -39,26 +45,48 @@ func run() error {
 	}
 	defer l.Close()
 
+	var ok bool
 	var stdout, stderr bytes.Buffer
 
 	runner := command.Runner(&stdout, &stderr)
 	duration := timer.TimeTask(func() {
-		err = runner(path.Job)
+		ok, err = runner(path.Job)
 	})
 
 	ScanAndLog(&stdout, l.Out)
 	ScanAndLog(&stderr, l.Err)
 
-	_, ok := err.(*exec.ExitError)
-
-	if err != nil && !ok {
-		err = fmt.Errorf("failed to execute %w", err)
+	if err != nil {
 		l.Main.Printf("%v", err)
 		return err
-	} else if err != nil {
-		l.Main.Printf("ended with error : %v", err)
+	}
+	if !ok {
+		l.Main.Printf("ended with error")
+		if len(env.Failure) > 0 {
+			l.Main.Printf("starting sinker %s", env.Failure)
+			var stdout, stderr bytes.Buffer
+			runner := command.Runner(&stdout, &stderr)
+			_, err = runner(path.Failure)
+			if err != nil {
+				l.Err.Printf("sinker ended with error %v", err)
+			}
+
+			ScanAndLog(&stdout, l.Sinker)
+			ScanAndLog(&stderr, l.Sinker)
+		}
 	} else {
 		l.Main.Printf("ended succesfully after %v", duration)
+		if len(env.Success) > 0 {
+			l.Main.Printf("starting sinker %s", env.Success)
+			var stdout, stderr bytes.Buffer
+			runner := command.Runner(&stdout, &stderr)
+			_, err = runner(path.Success)
+			if err != nil {
+				l.Err.Printf("sinker ended with error %v", err)
+			}
+			ScanAndLog(&stdout, l.Sinker)
+			ScanAndLog(&stderr, l.Sinker)
+		}
 	}
 
 	return nil
@@ -66,6 +94,6 @@ func run() error {
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Println(err)
+		fmt.Printf("error: %v", err)
 	}
 }
