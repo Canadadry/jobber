@@ -6,6 +6,7 @@ To become called Job a command must have :
 - an history of last run, indicating time of run, duration and status : success or failure
 - for previous run : stdout, stderr must be logged
 - must be abble to start a command to process result (status, stdout, stderr) (those command are called sinker)
+
 Jobber is basicly used with cron, which allow you receive an email when your command failed and see history of previous run. 
 
 
