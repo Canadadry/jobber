@@ -49,15 +49,19 @@ func run() error {
 	ScanAndLog(&stdout, l.Out)
 	ScanAndLog(&stderr, l.Err)
 
-	l.Main.Printf("duration %v", duration)
-	if exitError, ok := err.(*exec.ExitError); ok {
-		l.Main.Printf("ended with error : %v", exitError)
+	_, ok := err.(*exec.ExitError)
 
+	if err != nil && !ok {
+		err = fmt.Errorf("failed to execute %w", err)
+		l.Main.Printf("%v", err)
+		return err
+	} else if err != nil {
+		l.Main.Printf("ended with error : %v", err)
 	} else {
-		l.Main.Printf("ended succesfully")
+		l.Main.Printf("ended succesfully after %v", duration)
 	}
 
-	return err
+	return nil
 }
 
 func main() {

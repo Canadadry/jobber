@@ -3,6 +3,7 @@ package path
 import (
 	"fmt"
 	"os"
+	"time"
 )
 
 const (
@@ -15,7 +16,7 @@ const (
 )
 
 type Path struct {
-	JobName string
+	JobId   string
 	Job     string
 	JobLog  string
 	MainLog string
@@ -28,7 +29,7 @@ func Resolve(command string) (Path, error) {
 	}
 
 	return Path{
-		JobName: command,
+		JobId:   fmt.Sprintf("%s-%d", command, time.Now().Unix()),
 		Job:     fmt.Sprintf(jobFolder, home, command),
 		JobLog:  fmt.Sprintf(logFolder, home, command),
 		MainLog: fmt.Sprintf(logFolder, home, mainLogName),

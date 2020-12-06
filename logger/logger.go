@@ -30,7 +30,7 @@ func New(p path.Path) (Loggers, error) {
 	return Loggers{
 		mainLog:    mainFile,
 		jobLogFile: jobFile,
-		Main:       log.New(mainFile, p.JobName+" ", log.LstdFlags),
+		Main:       log.New(mainFile, p.JobId+" ", log.LstdFlags|log.Lmsgprefix),
 		Out:        log.New(jobFile, "out ", log.LstdFlags|log.Lmsgprefix),
 		Err:        log.New(jobFile, "err ", log.LstdFlags|log.Lmsgprefix),
 	}, nil
