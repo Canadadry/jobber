@@ -15,6 +15,7 @@ const (
 )
 
 type Path struct {
+	JobName string
 	Job     string
 	JobLog  string
 	MainLog string
@@ -27,6 +28,7 @@ func Resolve(command string) (Path, error) {
 	}
 
 	return Path{
+		JobName: command,
 		Job:     fmt.Sprintf(jobFolder, home, command),
 		JobLog:  fmt.Sprintf(logFolder, home, command),
 		MainLog: fmt.Sprintf(logFolder, home, mainLogName),

@@ -1,55 +1,62 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"jobber/command"
+	"jobber/logger"
 	"jobber/path"
+	"jobber/timer"
 	"log"
 	"os"
 	"os/exec"
-	"time"
 )
 
-const (
-	LogPath = "%s/.jobber/log/%s.log"
-)
-
-func timeTask(task func()) time.Duration {
-	start := time.Now()
-
-	task()
-
-	return time.Since(start)
+func ScanAndLog(b *bytes.Buffer, l *log.Logger) {
+	in := bufio.NewScanner(b)
+	for in.Scan() {
+		l.Printf(in.Text())
+	}
+	if err := in.Err(); err != nil {
+		log.Printf("error: %s", err)
+	}
 }
 
 func run() error {
 	if len(os.Args) <= 1 {
 		return fmt.Errorf("usage : jobber jobname")
 	}
-	path, err := path.Resolve(os.Args[1])
+	commandName := os.Args[1]
+	path, err := path.Resolve(commandName)
 	if err != nil {
 		return fmt.Errorf("cannot find home dir : %w", err)
 	}
 
-	f, err := os.OpenFile(path.MainLog, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	l, err := logger.New(path)
 	if err != nil {
-		return fmt.Errorf("cannot open main log file : %w", err)
+		return err
 	}
-	defer f.Close()
+	defer l.Close()
 
-	logger := log.New(f, os.Args[1]+" ", log.LstdFlags)
-	logger.Println("started")
-	runner := command.Runner(os.Stdout, os.Stderr)
-	duration := timeTask(func() {
+	var stdout, stderr bytes.Buffer
+
+	runner := command.Runner(&stdout, &stderr)
+	duration := timer.TimeTask(func() {
 		err = runner(path.Job)
 	})
-	logger.Printf("duration %v", duration)
+
+	ScanAndLog(&stdout, l.Out)
+	ScanAndLog(&stderr, l.Err)
+
+	l.Main.Printf("duration %v", duration)
 	if exitError, ok := err.(*exec.ExitError); ok {
-		logger.Printf("ended with error : %v", exitError)
+		l.Main.Printf("ended with error : %v", exitError)
 
 	} else {
-		logger.Printf("ended succesfully")
+		l.Main.Printf("ended succesfully")
 	}
+
 	return err
 }
 
