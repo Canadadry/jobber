@@ -16,14 +16,14 @@ func exist(path string) bool {
 	return true
 }
 
-func Runner(stdout io.Writer, stderr io.Writer) func(string) (bool, error) {
+func Runner(stdout io.Writer) func(string) (bool, error) {
 	return func(command string) (bool, error) {
 		if !exist(command) {
 			return false, fmt.Errorf("%s does not exist", command)
 		}
 		cmd := exec.Command(command)
 		cmd.Stdout = stdout
-		cmd.Stderr = stderr
+		cmd.Stderr = stdout
 		err := cmd.Run()
 
 		_, ok := err.(*exec.ExitError)

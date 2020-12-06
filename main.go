@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
@@ -9,18 +8,9 @@ import (
 	"github.com/canadadry/jobber/logger"
 	"github.com/canadadry/jobber/path"
 	"github.com/canadadry/jobber/timer"
-	"log"
+	"io"
+	"time"
 )
-
-func ScanAndLog(b *bytes.Buffer, l *log.Logger) {
-	in := bufio.NewScanner(b)
-	for in.Scan() {
-		l.Printf(in.Text())
-	}
-	if err := in.Err(); err != nil {
-		log.Printf("error: %s", err)
-	}
-}
 
 func run() error {
 
@@ -45,47 +35,41 @@ func run() error {
 	}
 	defer l.Close()
 
-	var ok bool
-	var stdout, stderr bytes.Buffer
+	var cmdSuccessfull bool
+	var stdout bytes.Buffer
+	var duration time.Duration
 
-	runner := command.Runner(&stdout, &stderr)
-	duration := timer.TimeTask(func() {
-		ok, err = runner(path.Job)
+	logger.CaptureInLog(&stdout, l.Out, func(w io.Writer) {
+		runner := command.Runner(w)
+		duration = timer.TimeTask(func() {
+			cmdSuccessfull, err = runner(path.Job)
+		})
 	})
-
-	ScanAndLog(&stdout, l.Out)
-	ScanAndLog(&stderr, l.Err)
 
 	if err != nil {
 		l.Main.Printf("%v", err)
 		return err
 	}
-	if !ok {
-		l.Main.Printf("ended with error")
-		if len(env.Failure) > 0 {
-			l.Main.Printf("starting sinker %s", env.Failure)
-			var stdout, stderr bytes.Buffer
-			runner := command.Runner(&stdout, &stderr)
-			_, err = runner(path.Failure)
-			if err != nil {
-				l.Err.Printf("sinker ended with error %v", err)
-			}
 
-			ScanAndLog(&stdout, l.Sinker)
-			ScanAndLog(&stderr, l.Sinker)
-		}
+	var sinkerEnv, sinkerPath string
+	if cmdSuccessfull == false {
+		l.Main.Printf("ended with error")
+		sinkerEnv = env.Failure
+		sinkerPath = path.Failure
 	} else {
 		l.Main.Printf("ended succesfully after %v", duration)
-		if len(env.Success) > 0 {
-			l.Main.Printf("starting sinker %s", env.Success)
-			var stdout, stderr bytes.Buffer
-			runner := command.Runner(&stdout, &stderr)
-			_, err = runner(path.Success)
-			if err != nil {
-				l.Err.Printf("sinker ended with error %v", err)
-			}
-			ScanAndLog(&stdout, l.Sinker)
-			ScanAndLog(&stderr, l.Sinker)
+		sinkerEnv = env.Success
+		sinkerPath = path.Success
+	}
+
+	if len(sinkerEnv) > 0 {
+		l.Sinker.Printf("starting %s", sinkerEnv)
+		logger.CaptureInLog(&stdout, l.Sinker, func(w io.Writer) {
+			runner := command.Runner(w)
+			_, err = runner(sinkerPath)
+		})
+		if err != nil {
+			l.Sinker.Printf("ended with error %v", err)
 		}
 	}
 

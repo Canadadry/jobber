@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"github.com/canadadry/jobber/path"
 	"io"
@@ -13,7 +15,6 @@ type Loggers struct {
 	jobLogFile io.Closer
 	Main       *log.Logger
 	Out        *log.Logger
-	Err        *log.Logger
 	Sinker     *log.Logger
 }
 
@@ -33,7 +34,6 @@ func New(p path.Path) (Loggers, error) {
 		jobLogFile: jobFile,
 		Main:       log.New(mainFile, p.JobId+" ", log.LstdFlags|log.Lmsgprefix),
 		Out:        log.New(jobFile, p.JobId+"-out ", log.LstdFlags|log.Lmsgprefix),
-		Err:        log.New(jobFile, p.JobId+"-err ", log.LstdFlags|log.Lmsgprefix),
 		Sinker:     log.New(jobFile, p.JobId+"-sinker ", log.LstdFlags|log.Lmsgprefix),
 	}, nil
 }
@@ -41,4 +41,22 @@ func New(p path.Path) (Loggers, error) {
 func (l Loggers) Close() {
 	l.mainLog.Close()
 	l.jobLogFile.Close()
+}
+
+func CaptureInLog(bout *bytes.Buffer, lout *log.Logger, task func(w io.Writer)) {
+	if bout == nil {
+		bout = &bytes.Buffer{}
+	}
+	task(bout)
+	ScanAndLog(bout, lout)
+}
+
+func ScanAndLog(b *bytes.Buffer, l *log.Logger) {
+	in := bufio.NewScanner(b)
+	for in.Scan() {
+		l.Printf(in.Text())
+	}
+	if err := in.Err(); err != nil {
+		log.Printf("error: %s", err)
+	}
 }
