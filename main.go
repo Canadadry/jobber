@@ -64,8 +64,8 @@ func run() error {
 
 	if len(sinkerEnv) > 0 {
 		l.Sinker.Printf("starting %s", sinkerEnv)
-		logger.CaptureInLog(&stdout, l.Sinker, func(w io.Writer) {
-			runner := command.Runner(w, path.JobId)
+		logger.CaptureInLog(nil, l.Sinker, func(w io.Writer) {
+			runner := command.Runner(w, path.JobId, stdout.String())
 			_, err = runner(sinkerPath)
 		})
 		if err != nil {

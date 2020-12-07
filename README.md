@@ -7,8 +7,8 @@ To become called Job a command must have :
 - for previous run : stdout, stderr must be logged
 - must be abble to start a command to process result (status, stdout, stderr) (those command are called sinker)
 
-Jobber is basicly used with cron, which allow you receive an email when your command failed and see history of previous run. 
 
+Jobber is basicly used with cron, which allow you receive an email when your command failed and see history of previous run. 
 
 ## Install 
 
@@ -56,4 +56,13 @@ Just add `.sh` in `.jobber/job` for job and in  `.jobber/sinker`
             ├── JobName3.log               
             └── JobName4.log                        
 
+### Sinker Example 
 
+Jobber will call sinker command with two arguments : a unique identifier and the job stdout and stderr
+
+If you want to receive an email on a job failure you can try this : 
+```bash 
+#!/usr/bin/env bash
+
+echo -e "Notification for" $1 "\n" $2  | mail -s "Jobber Notification" -aFrom:server@example.com admin@example.com
+```
