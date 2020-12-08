@@ -1,14 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"github.com/canadadry/jobber/command"
 	"github.com/canadadry/jobber/logger"
 	"github.com/canadadry/jobber/path"
 	"github.com/canadadry/jobber/timer"
-	"io"
 	"time"
 )
 
@@ -36,14 +34,11 @@ func run() error {
 	defer l.Close()
 
 	var cmdSuccessfull bool
-	var stdout bytes.Buffer
 	var duration time.Duration
 
-	logger.CaptureInLog(&stdout, l.Out, func(w io.Writer) {
-		runner := command.Runner(w, "")
-		duration = timer.TimeTask(func() {
-			cmdSuccessfull, err = runner(path.Job)
-		})
+	runner := command.Runner(l.Out)
+	duration = timer.TimeTask(func() {
+		cmdSuccessfull, err = runner(path.Job)
 	})
 
 	if err != nil {
@@ -64,10 +59,7 @@ func run() error {
 
 	if len(sinkerEnv) > 0 {
 		l.Sinker.Printf("starting %s", sinkerEnv)
-		logger.CaptureInLog(nil, l.Sinker, func(w io.Writer) {
-			runner := command.Runner(w, path.JobId, stdout.String())
-			_, err = runner(sinkerPath)
-		})
+		_, err = command.Runner(l.Sinker, path.JobId, l.Builder.String())(sinkerPath)
 		if err != nil {
 			l.Sinker.Printf("ended with error %v", err)
 		}

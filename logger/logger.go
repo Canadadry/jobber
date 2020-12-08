@@ -1,18 +1,18 @@
 package logger
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"github.com/canadadry/jobber/path"
 	"io"
 	"log"
 	"os"
+	"strings"
 )
 
 type Loggers struct {
 	mainLog    io.Closer
 	jobLogFile io.Closer
+	Builder    *strings.Builder
 	Main       *log.Logger
 	Out        *log.Logger
 	Sinker     *log.Logger
@@ -29,34 +29,23 @@ func New(p path.Path) (Loggers, error) {
 		return Loggers{}, fmt.Errorf("cannot open job log file : %w", err)
 	}
 
-	return Loggers{
+	l := Loggers{
 		mainLog:    mainFile,
 		jobLogFile: jobFile,
-		Main:       log.New(mainFile, p.JobId+" ", log.LstdFlags|log.Lmsgprefix),
-		Out:        log.New(jobFile, p.JobId+"-out ", log.LstdFlags|log.Lmsgprefix),
-		Sinker:     log.New(jobFile, p.JobId+"-sinker ", log.LstdFlags|log.Lmsgprefix),
-	}, nil
+		Builder:    &strings.Builder{},
+	}
+
+	mainMux := io.MultiWriter(mainFile, l.Builder, os.Stdout)
+	outMux := io.MultiWriter(jobFile, l.Builder, os.Stdout)
+
+	l.Main = log.New(mainMux, p.JobId+" ", log.LstdFlags|log.Lmsgprefix)
+	l.Out = log.New(outMux, p.JobId+"-out ", log.LstdFlags|log.Lmsgprefix)
+	l.Sinker = log.New(outMux, p.JobId+"-sinker ", log.LstdFlags|log.Lmsgprefix)
+
+	return l, nil
 }
 
 func (l Loggers) Close() {
 	l.mainLog.Close()
 	l.jobLogFile.Close()
-}
-
-func CaptureInLog(bout *bytes.Buffer, lout *log.Logger, task func(w io.Writer)) {
-	if bout == nil {
-		bout = &bytes.Buffer{}
-	}
-	task(bout)
-	ScanAndLog(bout, lout)
-}
-
-func ScanAndLog(b *bytes.Buffer, l *log.Logger) {
-	in := bufio.NewScanner(b)
-	for in.Scan() {
-		l.Printf(in.Text())
-	}
-	if err := in.Err(); err != nil {
-		log.Printf("error: %s", err)
-	}
 }
