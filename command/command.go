@@ -42,7 +42,7 @@ func Runner(l *log.Logger, args ...string) func(string) (bool, error) {
 		out := bufio.NewScanner(multi)
 
 		for out.Scan() {
-			l.Printf(out.Text())
+			l.Printf("%s", out.Text())
 		}
 		if err := out.Err(); err != nil {
 			l.Printf("error: %s", err)
